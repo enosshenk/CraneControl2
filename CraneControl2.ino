@@ -36,15 +36,67 @@ void setup() {
 
 void loop() {
   
-/*  for (int i=0; i<6; i++) {
+  Serial.println(Channel[0]);
+  for (int i=0; i<6; i++) {
     Channel[i] = IBus.readChannel(i);
-    float temp = (float)Channel[i] - 998;
-    if (temp < 0) { temp = 0; }
-    ChannelF[i] = temp / 990;
+    float temp = (float)Channel[i] - 2000;
+  //  if (temp < 0) { temp = 0; }
+    ChannelF[i] = temp / 1000;
   }
-  printChannels(); */
+
+  UpdateModule1();
+ // printChannels();
 
   delay(100);
+}
+
+void UpdateModule1() {
+
+  if (ChannelF[1] > 0.1) {
+    // Motor 1 forward
+    digitalWrite(M1IN1, HIGH );
+    digitalWrite(M1IN2, LOW);
+   // float temp = ChannelF[1] * -1;
+    analogWrite(M1ENA, ChannelF[1] * 255);
+    Serial.println(ChannelF[1] * 255);
+  }
+  else if (ChannelF[1] < -0.1) {
+    // Motor 1 reverse
+    digitalWrite(M1IN1, LOW);
+    digitalWrite(M1IN2, HIGH);
+    float temp = ChannelF[1] * -1;
+    analogWrite(M1ENA, temp * 255);
+    Serial.println(temp);
+  }
+  else {
+    // Motor 1 stop
+    analogWrite(M1ENA, 0); 
+  }
+ 
+
+  if (ChannelF[2] > 0.1) {
+    // Motor 2 forward
+    digitalWrite(M1IN3, LOW);
+    digitalWrite(M1IN4, HIGH);
+    analogWrite(M1ENB, ChannelF[2] * 255);
+    Serial.println(ChannelF[1] * 255);
+  }
+  else if (ChannelF[2] < -0.1) {
+    // Motor 2 reverse
+    digitalWrite(M1IN3, HIGH);
+    digitalWrite(M1IN4, LOW);
+    float temp = ChannelF[2] * -1;
+    analogWrite(M1ENB, temp * 255);
+        Serial.println(temp);
+
+  }
+  else {
+    // Motor 2 stop
+    analogWrite(M1ENB, 0);
+   }
+
+
+
 }
 
 void printChannels() {
