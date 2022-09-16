@@ -3,6 +3,7 @@
 IBusBM IBus;        // IBus object
 int Channel[5];     // Array for raw channel data
 float ChannelF[5];  // Cleaned up array
+bool Direction[5];  // Direction array
 
 // PINS
 int M1IN1 = 22; int M1IN2 = 24; int M1IN3 = 26; int M1IN4 = 28; 
@@ -23,6 +24,7 @@ void setup() {
   // PWM
   for (int i=2; i<10; i++){
     pinMode(i, OUTPUT);
+    analogWrite(i, 0.0);
   }
 
   // Digital
@@ -36,72 +38,58 @@ void setup() {
 
 void loop() {
   
-  Serial.println(Channel[0]);
   for (int i=0; i<6; i++) {
     Channel[i] = IBus.readChannel(i);
-    float temp = (float)Channel[i] - 2000;
-  //  if (temp < 0) { temp = 0; }
-    ChannelF[i] = temp / 1000;
+    Serial.println(Channel[i]);
+    if (Channel[i] < 1500) { Direction[i] = false; } else if (Channel[i] > 1500) { Direction[i] = true; }
   }
-
+  
   UpdateModule1();
- // printChannels();
+//  printChannels();
 
   delay(100);
 }
 
 void UpdateModule1() {
-
-  if (ChannelF[1] > 0.1) {
+ // Serial.println(ChannelF[1]);
+  if (Direction[1] == true) {
+ //   Serial.println("Forward");
     // Motor 1 forward
     digitalWrite(M1IN1, HIGH );
     digitalWrite(M1IN2, LOW);
-   // float temp = ChannelF[1] * -1;
-    analogWrite(M1ENA, ChannelF[1] * 255);
-    Serial.println(ChannelF[1] * 255);
+    int temp = map(Channel[1], 1000, 1500, 0, 255);
+    analogWrite(M1ENA, temp);
   }
-  else if (ChannelF[1] < -0.1) {
+  else if (Direction[1] == false) {
+  //  Serial.println("Reverse");
     // Motor 1 reverse
     digitalWrite(M1IN1, LOW);
     digitalWrite(M1IN2, HIGH);
-    float temp = ChannelF[1] * -1;
-    analogWrite(M1ENA, temp * 255);
-    Serial.println(temp);
-  }
-  else {
-    // Motor 1 stop
-    analogWrite(M1ENA, 0); 
-  }
- 
-
-  if (ChannelF[2] > 0.1) {
+    int temp = map(Channel[1], 1500, 2000, 0, 255);
+    analogWrite(M1ENA, temp);
+  } 
+  
+  if (Direction[2] == true) {
+//    Serial.println("Forward");
     // Motor 2 forward
+    digitalWrite(M1IN3, HIGH );
+    digitalWrite(M1IN4, LOW);
+    int temp = map(Channel[2], 1000, 1500, 0, 255);
+    analogWrite(M1ENB, temp);
+  }
+  else if (Direction[2] == false) {
+//    Serial.println("Reverse");
+    // Motor 2 reverse
     digitalWrite(M1IN3, LOW);
     digitalWrite(M1IN4, HIGH);
-    analogWrite(M1ENB, ChannelF[2] * 255);
-    Serial.println(ChannelF[1] * 255);
-  }
-  else if (ChannelF[2] < -0.1) {
-    // Motor 2 reverse
-    digitalWrite(M1IN3, HIGH);
-    digitalWrite(M1IN4, LOW);
-    float temp = ChannelF[2] * -1;
-    analogWrite(M1ENB, temp * 255);
-        Serial.println(temp);
-
-  }
-  else {
-    // Motor 2 stop
-    analogWrite(M1ENB, 0);
-   }
-
-
-
+    int temp = map(Channel[2], 1500, 2000, 0, 255);
+    analogWrite(M1ENB, temp);
+  } 
 }
 
 void printChannels() {
   for (int i=0; i<6; i++) {
-    Serial.print("Channel ");
+ //   Serial.print("Channel ");
     Serial.print(i);
     Serial.print(": ");
     Serial.println(ChannelF[i]);
