@@ -1,4 +1,3 @@
-#include <Servo.h>
 #include <IBusBM.h>
 
 IBusBM IBus;                              // IBus object
@@ -21,12 +20,10 @@ int M1ENB = 3;  int M2ENB = 5;  int M3ENB = 7;  int M4ENB = 9;
 int LightsPin = 10;
 int Green = 11;
 int Red = 12;
-int ServoPin = 13;
 
 bool LinkUp = false;    // True if transmitter is talking to us
 bool Lights = false;    // True if lights are on
 int SameReads = 0;      // Counts identical channel reads for determining connection
-Servo ServoRot;         // Servo control object
 
 bool DriveMode = false; // State for driving tracks or controlling crane boom
 
@@ -45,9 +42,6 @@ void setup() {
   for (int i=22; i<53; i+=2) {
     pinMode(i, OUTPUT);
   }
-
-  // Servo
-  ServoRot.attach(13);
 
   // LED
   pinMode(Green, OUTPUT);
@@ -116,27 +110,16 @@ void loop() {
   // State change for driving mode
   if (DriveMode) {
     UpdateModule2();      // Only use module 2 for track control
-    ServoRot.write(95);   // Set the rotation servo to neutral value
     
   } else {
     analogWrite(4, 0.0);   // Set track motor controls to off
     analogWrite(5, 0.0);
     UpdateModule1();        // Update the rest of the controllers
-    UpdateServo();
+    UpdateModule3();
+    UpdateModule4();
   }
 
   delay(100);
-}
-
-void UpdateServo() {
-  if (ChannelF[0] > 0) {
-      // Rotate right with positive value
-      float Output = 95 + ChannelF[0] * 20;
-      ServoRot.write((int)Output);  
-  } else {
-      float Output = 95 - (ChannelF[0] * -1) * 20;
-      ServoRot.write((int)Output);
-  }
 }
 
 void CheckLights() {
@@ -150,6 +133,7 @@ void CheckLights() {
 }
 
 void UpdateModule1() {  
+  // Boom Rotate
   if (ChannelF[0] > 0.05) {
     // Motor 1 forward
     digitalWrite(M1IN1, HIGH );
@@ -191,6 +175,7 @@ void UpdateModule1() {
 }
 
 void UpdateModule2() {  
+  // Left Track
   if (ChannelF[2] > 0.05) {
     // Motor 3 forward
     digitalWrite(M2IN1, HIGH );
@@ -209,7 +194,8 @@ void UpdateModule2() {
   {
     analogWrite(M2ENA, 0);
   }
-  
+
+  // Right Track
   if (ChannelF[1] > 0.05) {
     // Motor 4 forward
     digitalWrite(M2IN3, LOW);
@@ -227,6 +213,90 @@ void UpdateModule2() {
   else
   {
     analogWrite(M2ENB, 0);
+  }
+}
+
+void UpdateModule3() { 
+  // Claw Grip
+  if (ChannelF[5] > 0.05) {
+    // Motor 3 forward
+    digitalWrite(M3IN1, HIGH );
+    digitalWrite(M3IN2, LOW);
+    float temp = ChannelF[5] * 255;
+    analogWrite(M3ENA, (int)temp);
+  }
+  else if (ChannelF[5] < -0.05) {
+    // Motor 3 reverse
+    digitalWrite(M3IN1, LOW);
+    digitalWrite(M3IN2, HIGH);
+    float temp = ChannelF[5] * -1;
+    analogWrite(M3ENA, temp * 255);
+  }
+  else
+  {
+    analogWrite(M3ENA, 0);
+  }
+
+  // Claw Rotate
+  if (ChannelF[3] > 0.05) {
+    // Motor 4 forward
+    digitalWrite(M3IN3, LOW);
+    digitalWrite(M3IN4, HIGH);
+    float temp = ChannelF[3] * 255;
+    analogWrite(M3ENB, (int)temp);
+  }
+  else if (ChannelF[3] < -0.05) {
+    // Motor 4 reverse
+    digitalWrite(M3IN3, HIGH);
+    digitalWrite(M3IN4, LOW);
+    float temp = ChannelF[3] * -1;
+    analogWrite(M3ENB, temp * 255);
+  }
+  else
+  {
+    analogWrite(M3ENB, 0);
+  }
+}
+
+void UpdateModule4() {  
+  // Boom Extend
+  if (ChannelF[2] > 0.05) {
+    // Motor 3 forward
+    digitalWrite(M4IN1, LOW );
+    digitalWrite(M4IN2, HIGH);
+    float temp = ChannelF[2] * 255;
+    analogWrite(M4ENA, (int)temp);
+  }
+  else if (ChannelF[2] < -0.05) {
+    // Motor 3 reverse
+    digitalWrite(M4IN1, HIGH);
+    digitalWrite(M4IN2, LOW);
+    float temp = ChannelF[2] * -1;
+    analogWrite(M4ENA, temp * 255);
+  }
+  else
+  {
+    analogWrite(M4ENA, 0);
+  }
+
+  // Boom Elevate
+  if (ChannelF[1] > 0.05) {
+    // Motor 4 forward
+    digitalWrite(M4IN3, LOW);
+    digitalWrite(M4IN4, HIGH);
+    float temp = ChannelF[1] * 255;
+    analogWrite(M4ENB, (int)temp);
+  }
+  else if (ChannelF[1] < -0.05) {
+    // Motor 4 reverse
+    digitalWrite(M4IN3, HIGH);
+    digitalWrite(M4IN4, LOW);
+    float temp = ChannelF[1] * -1;
+    analogWrite(M4ENB, temp * 255);
+  }
+  else
+  {
+    analogWrite(M4ENB, 0);
   }
 }
 
