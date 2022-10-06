@@ -1,3 +1,9 @@
+//
+//  Tekventure Crane Model
+//  Control system
+//  by Enos Shenk
+//
+
 #include <IBusBM.h>
 
 IBusBM IBus;                              // IBus object
@@ -32,13 +38,14 @@ void setup() {
   IBus.begin(Serial2);    // Init IBus on RX2 
 
   // Init pins
-  // PWM
+  // PWM for Module Enable pins
   for (int i=2; i<10; i++){
     pinMode(i, OUTPUT);
     analogWrite(i, 0.0);
   }
 
   // Digital
+  // For module IN1 and IN2 pins
   for (int i=22; i<53; i+=2) {
     pinMode(i, OUTPUT);
   }
@@ -63,7 +70,9 @@ void loop() {
 
   // Read current channel data
   for (int i=0; i<7; i++) {
+    // Channel[x] is raw servo data, 1000 - 2000 int
     Channel[i] = IBus.readChannel(i);
+    // ChannelF[x] is clamped -1.0 - 1.0 float
     float temp = ((float)Channel[i] - 2000.0) / 500.0;
     ChannelF[i] = temp + 1.0;
   }
@@ -131,6 +140,13 @@ void CheckLights() {
     digitalWrite(LightsPin, LOW);
   }
 }
+
+
+//
+//  Functions to update motor control modules below
+//  Each module has 4 digital input, two pairs per module
+//  Enable pin takes PWM signal
+//
 
 void UpdateModule1() {  
   // Boom Rotate
