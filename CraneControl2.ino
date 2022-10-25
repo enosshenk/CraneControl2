@@ -33,6 +33,10 @@ int SameReads = 0;      // Counts identical channel reads for determining connec
 
 bool DriveMode = false; // State for driving tracks or controlling crane boom
 
+bool ClawOpen = true;
+int ClawInitialTime = 5;
+int ClawTimeElapsed = 0;
+
 void setup() {
   Serial.begin(115200);
   IBus.begin(Serial2);    // Init IBus on RX2 
@@ -233,24 +237,17 @@ void UpdateModule2() {
 }
 
 void UpdateModule3() { 
-  // Claw Grip
-  if (ChannelF[5] > 0.05) {
-    // Motor 3 forward
-    digitalWrite(M3IN1, HIGH );
-    digitalWrite(M3IN2, LOW);
-    float temp = ChannelF[5] * 255;
-    analogWrite(M3ENA, (int)temp);
-  }
-  else if (ChannelF[5] < -0.05) {
-    // Motor 3 reverse
-    digitalWrite(M3IN1, LOW);
-    digitalWrite(M3IN2, HIGH);
-    float temp = ChannelF[5] * -1;
-    analogWrite(M3ENA, temp * 255);
-  }
-  else
-  {
-    analogWrite(M3ENA, 0);
+    // Claw Grip
+  if (ChannelF[5] > 0.05 && ClawOpen) {
+    // Close Claw from open state
+    ClawOpen = false;
+    ClawTimeElapsed = 0;
+    UpdateClaw();
+  } else if (ChannelF[5] < -0.05 && ClawOpen == false) {
+    // Open claw from closed state
+    ClawOpen = true;
+    ClawTimeElapsed = 0;
+    UpdateClaw();
   }
 
   // Claw Rotate
@@ -313,6 +310,34 @@ void UpdateModule4() {
   else
   {
     analogWrite(M4ENB, 0);
+  }
+}
+
+void UpdateClaw() {
+  if (ClawOpen) {
+    // Open from closed state
+    if (ClawTimeElapsed < ClawInitialTime) {
+      digitalWrite(M3IN1, LOW);
+      digitalWrite(M3IN2, HIGH);
+      analogWrite(M3ENA, 64); 
+      ClawTimeElapsed++;  
+    } else {
+      digitalWrite(M3IN1, LOW);
+      digitalWrite(M3IN2, HIGH);
+      analogWrite(M3ENA, 32);       
+    }
+  } else {
+    // Close from open state
+    if (ClawTimeElapsed < ClawInitialTime) {
+      digitalWrite(M3IN1, HIGH);
+      digitalWrite(M3IN2, LOW);
+      analogWrite(M3ENA, 64);  
+      ClawTimeElapsed++;
+    } else {
+      digitalWrite(M3IN1, HIGH);
+      digitalWrite(M3IN2, LOW);
+      analogWrite(M3ENA, 32);      
+    }
   }
 }
 
